@@ -19,6 +19,8 @@ contract Ballot {
         uint voteCount;
     }
 
+    uint constant MAX_Delegation_Depth = 10; 
+
     event RightToVote(address indexed voter);
     event Delegated(address indexed from, address indexed to);
     event Voted(address indexed voter, uint indexed proposal, uint weight);
@@ -44,7 +46,9 @@ contract Ballot {
     }
 
     function giveRightToVote(address voter) external {
-        require(chairperson == msg.sender, "Only chairperson"); // onlyOwner
+        require(chairperson == msg.sender, "Only chairperson"); 
+        require(voter != address(0));
+
         Voter storage v = voters[voter];
         require(!v.voted, "Already voted");
         require(v.weight == 0, "Already has right");
@@ -59,10 +63,13 @@ contract Ballot {
         require(!sender.voted, "already voted");
         require(to != msg.sender, "self");
         
+        uint delegationCount;
         while(true) {
+            require(delegationCount < MAX_Delegation_Depth);
             address next = voters[to].delegate;
             if(next == address(0)) break;
             to = next;
+            delegationCount++;
             require(to != msg.sender, "Found loop in delegation");
         }
 
