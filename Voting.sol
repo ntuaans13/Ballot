@@ -12,7 +12,7 @@ contract Ballot {
         bool voted;
         uint64 vote;
         address delegate;
-    }
+    Ư
 
     struct Proposal {
         bytes32 name;
