@@ -12,14 +12,14 @@ contract Ballot {
         bool voted;
         uint64 vote;
         address delegate;
-    Ư
+    }
 
     struct Proposal {
         bytes32 name;
         uint voteCount;
     }
 
-    uint constant MAX_Delegation_Depth = 10; 
+    uint constant MAX_DELEGATION_DEPTH = 10; 
 
     event RightToVote(address indexed voter);
     event Delegated(address indexed from, address indexed to);
@@ -65,7 +65,7 @@ contract Ballot {
         
         uint delegationCount;
         while(true) {
-            require(delegationCount < MAX_Delegation_Depth);
+            require(delegationCount < MAX_DELEGATION_DEPTH);
             address next = voters[to].delegate;
             if(next == address(0)) break;
             to = next;
