@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity ^0.8.20;
+
+// custom errors
+error OnlyChairperson();
+error ZeroAddress();
+error AlreadyVoted();
+error AlreadyHasRight();
+error NoVotingRight();
+error SelfDelegation();
+error DelegationLimitExceed();
+error DelegationLoop();
+error DelegateHasNoRight();
+error InvalidProposal();
 
 contract Ballot {
     struct Voter {
@@ -30,7 +42,7 @@ contract Ballot {
     mapping(address => Voter) public voters;
     Proposal[] public proposals;
     uint public winnerIndex;
-    uint public winnerVoteCount = 0;
+    uint public winnerVoteCount;
 
     constructor(bytes32[] memory proposalNames) {
         chairperson = msg.sender;
@@ -46,12 +58,12 @@ contract Ballot {
     }
 
     function giveRightToVote(address voter) external {
-        require(chairperson == msg.sender, "Only chairperson"); 
-        require(voter != address(0));
+        if(msg.sender != chairperson) revert OnlyChairperson();
+        if(voter == address(0)) revert ZeroAddress();
 
         Voter storage v = voters[voter];
-        require(!v.voted, "Already voted");
-        require(v.weight == 0, "Already has right");
+        if(v.voted) revert AlreadyVoted();
+        if(v.weight > 0) revert AlreadyHasRight();
         v.weight = 1;
         
         emit RightToVote(voter);
@@ -59,22 +71,25 @@ contract Ballot {
 
     function delegate(address to) external {
         Voter storage sender = voters[msg.sender];
-        require(sender.weight > 0, "no right");
-        require(!sender.voted, "already voted");
-        require(to != msg.sender, "self");
+
+        if(sender.weight == 0) revert NoVotingRight();
+        if(sender.voted) revert AlreadyVoted();
+        if(to == msg.sender) revert SelfDelegation();
         
         uint delegationCount;
         while(true) {
-            require(delegationCount < MAX_DELEGATION_DEPTH);
+            if(delegationCount >= MAX_DELEGATION_DEPTH) revert DelegationLimitExceed();
+
             address next = voters[to].delegate;
             if(next == address(0)) break;
             to = next;
             delegationCount++;
-            require(to != msg.sender, "Found loop in delegation");
+
+            if(to == msg.sender) revert DelegationLoop();
         }
 
         Voter storage delegate_ = voters[to];
-        require(delegate_.weight > 0, "delegate has no right");
+        if(delegate_.weight == 0) revert DelegateHasNoRight();
 
         sender.voted = true;
         sender.delegate = to;
@@ -103,8 +118,9 @@ contract Ballot {
 
     function vote(uint proposal) external {
         Voter storage sender = voters[msg.sender];
-        require(sender.weight > 0);
-        require(!sender.voted);
+        if(sender.weight == 0) revert NoVotingRight();
+        if(sender.voted) revert AlreadyVoted();
+        if(proposal >= proposals.length) revert InvalidProposal();
 
         sender.voted = true;
         sender.vote = uint64(proposal);
