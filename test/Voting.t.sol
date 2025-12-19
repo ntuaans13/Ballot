@@ -219,13 +219,19 @@ contract votingTest is Test {
     function testDelegateRevertsDelegationLimitExceed() public {
         uint256 depth = ballot.MAX_DELEGATION_DEPTH();
         address[] memory chain = new address[](depth + 1);
-        for (uint256 i = 0; i <= depth; ++i) {
+        for (uint256 i = 0; i <= depth;) {
             chain[i] = address(uint160(0x100 + i));
             _giveRight(chain[i]);
+            unchecked {
+                ++i;
+            }
         }
-        for (uint256 i = 0; i < depth; ++i) {
+        for (uint256 i = 0; i < depth;) {
             vm.prank(chain[i]);
             ballot.delegate(chain[i + 1]);
+            unchecked {
+                ++i;
+            }
         }
 
         _giveRight(Alice);
