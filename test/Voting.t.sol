@@ -10,8 +10,8 @@ contract votingTest is Test {
 
     event RightToVote(address indexed voter);
     event Delegated(address indexed from, address indexed to);
-    event Voted(address indexed voter, uint indexed proposal, uint weight);
-    event WinnerUpdated(uint indexed proposal, uint newVoteCount);
+    event Voted(address indexed voter, uint256 indexed proposal, uint256 weight);
+    event WinnerUpdated(uint256 indexed proposal, uint256 newVoteCount);
 
     address chairperson = address(this);
     address Alice = address(0x1);
@@ -32,11 +32,10 @@ contract votingTest is Test {
         ballot.giveRightToVote(Voter);
     }
 
-
     function testInitialState() public {
         assertEq(ballot.chairperson(), chairperson);
         (uint64 weight, bool voted, uint64 vote, address delegate) = ballot.voters(chairperson);
-        
+
         assertEq(weight, 1);
         assertFalse(voted);
         assertEq(vote, 0);
@@ -52,7 +51,7 @@ contract votingTest is Test {
         emit RightToVote(Alice);
 
         _giveRight(Alice);
-        
+
         (uint64 weight,,,) = ballot.voters(Alice);
         assertEq(weight, 1);
     }
@@ -83,7 +82,7 @@ contract votingTest is Test {
         ballot.giveRightToVote(Alice);
     }
 
-    //vote 
+    //vote
     function testVoteIncreaseVotesCountAndUpdateWinner() public {
         _giveRight(Alice);
         vm.prank(Alice);
@@ -94,8 +93,8 @@ contract votingTest is Test {
         assertTrue(votedA);
         assertEq(voteA, 1);
         assertEq(delegateA, address(0));
-        
-        (, uint voteCount) = ballot.proposals(1);
+
+        (, uint256 voteCount) = ballot.proposals(1);
         assertEq(voteCount, 1);
 
         assertEq(ballot.winnerIndex(), 1);
@@ -109,7 +108,7 @@ contract votingTest is Test {
 
         vm.expectEmit(true, false, false, true, address(ballot));
         emit WinnerUpdated(1, 1);
-        
+
         vm.prank(Alice);
         ballot.vote(1);
     }
@@ -119,12 +118,12 @@ contract votingTest is Test {
         vm.expectRevert(NoVotingRight.selector);
         ballot.vote(1);
     }
-    
+
     function testVoteRevertsIfAlreadyVoted() public {
         _giveRight(Alice);
         vm.prank(Alice);
         ballot.vote(1);
-        
+
         vm.prank(Alice);
         vm.expectRevert(AlreadyVoted.selector);
         ballot.vote(2);
@@ -141,7 +140,7 @@ contract votingTest is Test {
     function testDelegateToUnvotedVoterAccumulatesWeight() public {
         _giveRight(Alice);
         _giveRight(Bob);
-        
+
         (uint64 weightA,,,) = ballot.voters(Alice);
         (uint64 weightB,,,) = ballot.voters(Bob);
         assertEq(weightA, 1);
@@ -152,8 +151,8 @@ contract votingTest is Test {
 
         vm.prank(Alice);
         ballot.delegate(Bob);
-        
-        (, bool votedA, , address delegateA) = ballot.voters(Alice);
+
+        (, bool votedA,, address delegateA) = ballot.voters(Alice);
         assertTrue(votedA);
         assertEq(delegateA, Bob);
 
@@ -168,15 +167,15 @@ contract votingTest is Test {
         vm.prank(Alice);
         ballot.vote(1);
 
-        (, uint voteCountBefore) = ballot.proposals(1);
+        (, uint256 voteCountBefore) = ballot.proposals(1);
         assertEq(voteCountBefore, 1);
         assertEq(ballot.winnerIndex(), 1);
         assertEq(ballot.winnerVoteCount(), 1);
-        
+
         vm.prank(Bob);
         ballot.delegate(Alice);
-        
-        (, uint voteCountAfter) = ballot.proposals(1);
+
+        (, uint256 voteCountAfter) = ballot.proposals(1);
         assertEq(voteCountAfter, 2);
         assertEq(ballot.winnerIndex(), 1);
         assertEq(ballot.winnerVoteCount(), 2);
@@ -192,7 +191,7 @@ contract votingTest is Test {
         _giveRight(Alice);
         vm.prank(Alice);
         ballot.vote(0);
-        
+
         vm.prank(Alice);
         vm.expectRevert(AlreadyVoted.selector);
         ballot.delegate(Bob);
@@ -211,20 +210,20 @@ contract votingTest is Test {
 
         vm.prank(Alice);
         ballot.delegate(Bob);
-        
+
         vm.prank(Bob);
         vm.expectRevert(DelegationLoop.selector);
         ballot.delegate(Alice);
     }
 
     function testDelegateRevertsDelegationLimitExceed() public {
-        uint depth = ballot.MAX_DELEGATION_DEPTH();
+        uint256 depth = ballot.MAX_DELEGATION_DEPTH();
         address[] memory chain = new address[](depth + 1);
-        for(uint i = 0; i <= depth; ++i) {
+        for (uint256 i = 0; i <= depth; ++i) {
             chain[i] = address(uint160(0x100 + i));
             _giveRight(chain[i]);
         }
-        for(uint i = 0; i < depth; ++i) {
+        for (uint256 i = 0; i < depth; ++i) {
             vm.prank(chain[i]);
             ballot.delegate(chain[i + 1]);
         }
@@ -234,13 +233,13 @@ contract votingTest is Test {
         vm.expectRevert(DelegationLimitExceed.selector);
         ballot.delegate(chain[0]);
     }
-    
+
     // winner
     function testWiningProposalAndWinnerName() public {
         _giveRight(Alice);
         _giveRight(Bob);
         _giveRight(Clark);
-        
+
         vm.prank(Alice);
         ballot.vote(0);
         vm.prank(Bob);
