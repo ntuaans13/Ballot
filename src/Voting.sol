@@ -31,7 +31,7 @@ contract Ballot {
         uint voteCount;
     }
 
-    uint constant MAX_DELEGATION_DEPTH = 10; 
+    uint public constant MAX_DELEGATION_DEPTH = 10; 
 
     event RightToVote(address indexed voter);
     event Delegated(address indexed from, address indexed to);
@@ -49,11 +49,12 @@ contract Ballot {
         voters[chairperson].weight = 1;
 
         uint len = proposalNames.length;
-        for(uint i = 0; i < len; i++) {
+        for(uint i = 0; i < len; ) {
             proposals.push(Proposal({
                 name : proposalNames[i],
                 voteCount : 0
             }));
+            unchecked {++i;}
         }
     }
 
@@ -96,7 +97,7 @@ contract Ballot {
 
         emit Delegated(msg.sender, to);
         
-        if (delegate_.voted) {
+        if(delegate_.voted) {
             uint64 senderWeight = sender.weight;
             uint64 delegateVote = delegate_.vote;
 
@@ -118,7 +119,7 @@ contract Ballot {
 
     function vote(uint proposal) external {
         Voter storage sender = voters[msg.sender];
-        if(sender.weight == 0) revert NoVotingRight();
+        if(sender.weight == 0) revert NoVotingRight();  
         if(sender.voted) revert AlreadyVoted();
         if(proposal >= proposals.length) revert InvalidProposal();
 
