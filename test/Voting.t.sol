@@ -260,4 +260,21 @@ contract votingTest is Test {
     }
 
     // fuzz test
+    function testFuzzManyVotersVoteForSameProposals(uint256 n) public {
+        uint256 numVoters = uint256(bound(n, 1, 20));
+        for (uint256 i = 0; i < numVoters;) {
+            address voter = address(uint160(0x100 + i));
+            _giveRight(voter);
+
+            vm.prank(voter);
+            ballot.vote(0);
+            unchecked {
+                ++i;
+            }
+        }
+        (, uint256 voteCount) = ballot.proposals(0);
+        assertEq(voteCount, numVoters);
+        assertEq(ballot.winnerIndex(), 0);
+        assertEq(ballot.winnerVoteCount(), numVoters);
+    }
 }
