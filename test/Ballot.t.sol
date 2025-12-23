@@ -245,12 +245,15 @@ contract votingTest is Test {
         _giveRight(alice);
         _giveRight(bob);
         _giveRight(clark);
+        _giveRight(dean);
 
         vm.prank(alice);
-        ballot.vote(0);
-        vm.prank(bob);
         ballot.vote(1);
+        vm.prank(bob);
+        ballot.vote(2);
         vm.prank(clark);
+        ballot.vote(2);
+        vm.prank(dean);
         ballot.vote(1);
 
         assertEq(ballot.winnerIndex(), 1);
