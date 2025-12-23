@@ -109,6 +109,10 @@ contract Ballot {
                 winnerVoteCount = newCount;
 
                 emit WinnerUpdated(delegateVote, newCount);
+            } else if (newCount == winnerVoteCount) {
+                if(winnerIndex > delegateVote) {
+                    winnerIndex = delegateVote;
+                }
             }
         } else {
             delegate_.weight += sender.weight;
@@ -136,6 +140,12 @@ contract Ballot {
             winnerVoteCount = newCount;
 
             emit WinnerUpdated(proposal, newCount);
+        } else if(newCount == winnerVoteCount) {
+            if(winnerIndex > proposal) {
+                winnerIndex = proposal;
+                
+                emit WinnerUpdated(proposal, newCount);
+            }
         }
     }
 
@@ -143,7 +153,7 @@ contract Ballot {
         return winnerIndex;
     }
 
-    function winnerName() external view returns (bytes32 WinnerName) {
-        WinnerName = proposals[winnerIndex].name;
+    function winnerName() external view returns (bytes32 winner) {
+        winner = proposals[winnerIndex].name;
     }
 }

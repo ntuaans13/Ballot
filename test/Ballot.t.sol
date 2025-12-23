@@ -3,7 +3,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/Voting.sol";
+import "../src/Ballot.sol";
 
 contract votingTest is Test {
     Ballot ballot;
@@ -14,10 +14,10 @@ contract votingTest is Test {
     event WinnerUpdated(uint256 indexed proposal, uint256 newVoteCount);
 
     address chairperson = address(this);
-    address Alice = address(0x1);
-    address Bob = address(0x2);
-    address Clark = address(0x3);
-    address Dean = address(0x4);
+    address alice = address(0x1);
+    address bob = address(0x2);
+    address clark = address(0x3);
+    address dean = address(0x4);
 
     function setUp() public {
         bytes32[] memory proposalNames = new bytes32[](3);
@@ -48,18 +48,18 @@ contract votingTest is Test {
     // GiveRightToVote
     function testGiveRightToVoteWorksAndEmitsEvent() public {
         vm.expectEmit(true, false, false, false, address(ballot));
-        emit RightToVote(Alice);
+        emit RightToVote(alice);
 
-        _giveRight(Alice);
+        _giveRight(alice);
 
-        (uint64 weight,,,) = ballot.voters(Alice);
+        (uint64 weight,,,) = ballot.voters(alice);
         assertEq(weight, 1);
     }
 
     function testGiveRightToVoteRevertsIfNotChairperson() public {
-        vm.prank(Alice);
+        vm.prank(alice);
         vm.expectRevert(OnlyChairperson.selector);
-        ballot.giveRightToVote(Bob);
+        ballot.giveRightToVote(bob);
     }
 
     function testGiveRightToVoteRevertsForZeroAddress() public {
@@ -68,27 +68,27 @@ contract votingTest is Test {
     }
 
     function testGiveRightToVoteRevertsIfAlreadyVoted() public {
-        _giveRight(Alice);
-        vm.prank(Alice);
+        _giveRight(alice);
+        vm.prank(alice);
         ballot.vote(0);
 
         vm.expectRevert(AlreadyVoted.selector);
-        ballot.giveRightToVote(Alice);
+        ballot.giveRightToVote(alice);
     }
 
     function testGiveRightToVoteRevertAlreadyHasRight() public {
-        _giveRight(Alice);
+        _giveRight(alice);
         vm.expectRevert(AlreadyHasRight.selector);
-        ballot.giveRightToVote(Alice);
+        ballot.giveRightToVote(alice);
     }
 
     //vote
     function testVoteIncreaseVotesCountAndUpdateWinner() public {
-        _giveRight(Alice);
-        vm.prank(Alice);
+        _giveRight(alice);
+        vm.prank(alice);
         ballot.vote(1);
 
-        (uint64 weightA, bool votedA, uint64 voteA, address delegateA) = ballot.voters(Alice);
+        (uint64 weightA, bool votedA, uint64 voteA, address delegateA) = ballot.voters(alice);
         assertEq(weightA, 1);
         assertTrue(votedA);
         assertEq(voteA, 1);
@@ -102,69 +102,69 @@ contract votingTest is Test {
     }
 
     function testVoteEmitsEvent() public {
-        _giveRight(Alice);
+        _giveRight(alice);
         vm.expectEmit(true, true, false, true, address(ballot));
-        emit Voted(Alice, 1, 1);
+        emit Voted(alice, 1, 1);
 
         vm.expectEmit(true, false, false, true, address(ballot));
         emit WinnerUpdated(1, 1);
 
-        vm.prank(Alice);
+        vm.prank(alice);
         ballot.vote(1);
     }
 
     function testVoteRevertsIfNoRight() public {
-        vm.prank(Alice);
+        vm.prank(alice);
         vm.expectRevert(NoVotingRight.selector);
         ballot.vote(1);
     }
 
     function testVoteRevertsIfAlreadyVoted() public {
-        _giveRight(Alice);
-        vm.prank(Alice);
+        _giveRight(alice);
+        vm.prank(alice);
         ballot.vote(1);
 
-        vm.prank(Alice);
+        vm.prank(alice);
         vm.expectRevert(AlreadyVoted.selector);
         ballot.vote(2);
     }
 
     function testVoteRevertsInvalidProposal() public {
-        _giveRight(Alice);
-        vm.prank(Alice);
+        _giveRight(alice);
+        vm.prank(alice);
         vm.expectRevert(InvalidProposal.selector);
         ballot.vote(3);
     }
 
     // Delegate
     function testDelegateToUnvotedVoterAccumulatesWeight() public {
-        _giveRight(Alice);
-        _giveRight(Bob);
+        _giveRight(alice);
+        _giveRight(bob);
 
-        (uint64 weightA,,,) = ballot.voters(Alice);
-        (uint64 weightB,,,) = ballot.voters(Bob);
+        (uint64 weightA,,,) = ballot.voters(alice);
+        (uint64 weightB,,,) = ballot.voters(bob);
         assertEq(weightA, 1);
         assertEq(weightB, 1);
 
         vm.expectEmit(true, true, false, false, address(ballot));
-        emit Delegated(Alice, Bob);
+        emit Delegated(alice, bob);
 
-        vm.prank(Alice);
-        ballot.delegate(Bob);
+        vm.prank(alice);
+        ballot.delegate(bob);
 
-        (, bool votedA,, address delegateA) = ballot.voters(Alice);
+        (, bool votedA,, address delegateA) = ballot.voters(alice);
         assertTrue(votedA);
-        assertEq(delegateA, Bob);
+        assertEq(delegateA, bob);
 
-        (uint64 weightB2,,,) = ballot.voters(Bob);
+        (uint64 weightB2,,,) = ballot.voters(bob);
         assertEq(weightB2, 2);
     }
 
     function testDelegateToVotedVoterAddsVotesAndUpdatesWinner() public {
-        _giveRight(Alice);
-        _giveRight(Bob);
+        _giveRight(alice);
+        _giveRight(bob);
 
-        vm.prank(Alice);
+        vm.prank(alice);
         ballot.vote(1);
 
         (, uint256 voteCountBefore) = ballot.proposals(1);
@@ -172,8 +172,8 @@ contract votingTest is Test {
         assertEq(ballot.winnerIndex(), 1);
         assertEq(ballot.winnerVoteCount(), 1);
 
-        vm.prank(Bob);
-        ballot.delegate(Alice);
+        vm.prank(bob);
+        ballot.delegate(alice);
 
         (, uint256 voteCountAfter) = ballot.proposals(1);
         assertEq(voteCountAfter, 2);
@@ -182,38 +182,38 @@ contract votingTest is Test {
     }
 
     function testDelegateRevertsIfNoVotingRight() public {
-        vm.prank(Alice);
+        vm.prank(alice);
         vm.expectRevert(NoVotingRight.selector);
-        ballot.delegate(Bob);
+        ballot.delegate(bob);
     }
 
     function testDelegateRevertsIfAlreadyVoted() public {
-        _giveRight(Alice);
-        vm.prank(Alice);
+        _giveRight(alice);
+        vm.prank(alice);
         ballot.vote(0);
 
-        vm.prank(Alice);
+        vm.prank(alice);
         vm.expectRevert(AlreadyVoted.selector);
-        ballot.delegate(Bob);
+        ballot.delegate(bob);
     }
 
     function testDelegateRevertsIfSelfDelegate() public {
-        _giveRight(Alice);
-        vm.prank(Alice);
+        _giveRight(alice);
+        vm.prank(alice);
         vm.expectRevert(SelfDelegation.selector);
-        ballot.delegate(Alice);
+        ballot.delegate(alice);
     }
 
     function testDelegateRevertsOnLoop() public {
-        _giveRight(Alice);
-        _giveRight(Bob);
+        _giveRight(alice);
+        _giveRight(bob);
 
-        vm.prank(Alice);
-        ballot.delegate(Bob);
+        vm.prank(alice);
+        ballot.delegate(bob);
 
-        vm.prank(Bob);
+        vm.prank(bob);
         vm.expectRevert(DelegationLoop.selector);
-        ballot.delegate(Alice);
+        ballot.delegate(alice);
     }
 
     function testDelegateRevertsDelegationLimitExceed() public {
@@ -234,23 +234,23 @@ contract votingTest is Test {
             }
         }
 
-        _giveRight(Alice);
-        vm.prank(Alice);
+        _giveRight(alice);
+        vm.prank(alice);
         vm.expectRevert(DelegationLimitExceed.selector);
         ballot.delegate(chain[0]);
     }
 
     // winner
     function testWiningProposalAndWinnerName() public {
-        _giveRight(Alice);
-        _giveRight(Bob);
-        _giveRight(Clark);
+        _giveRight(alice);
+        _giveRight(bob);
+        _giveRight(clark);
 
-        vm.prank(Alice);
+        vm.prank(alice);
         ballot.vote(0);
-        vm.prank(Bob);
+        vm.prank(bob);
         ballot.vote(1);
-        vm.prank(Clark);
+        vm.prank(clark);
         ballot.vote(1);
 
         assertEq(ballot.winnerIndex(), 1);
@@ -261,7 +261,7 @@ contract votingTest is Test {
 
     // fuzz test
     function testFuzzManyVotersVoteForSameProposals(uint256 n) public {
-        uint256 numVoters = uint256(bound(n, 1, 20));
+        uint numVoters = uint(bound(n, 1, 20));
         for (uint256 i = 0; i < numVoters;) {
             address voter = address(uint160(0x100 + i));
             _giveRight(voter);
@@ -277,4 +277,5 @@ contract votingTest is Test {
         assertEq(ballot.winnerIndex(), 0);
         assertEq(ballot.winnerVoteCount(), numVoters);
     }
+
 }
