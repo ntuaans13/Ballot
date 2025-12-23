@@ -110,7 +110,7 @@ contract Ballot {
 
                 emit WinnerUpdated(delegateVote, newCount);
             } else if (newCount == winnerVoteCount) {
-                if(winnerIndex > delegateVote) {
+                if (winnerIndex > delegateVote) {
                     winnerIndex = delegateVote;
                 }
             }
@@ -140,10 +140,10 @@ contract Ballot {
             winnerVoteCount = newCount;
 
             emit WinnerUpdated(proposal, newCount);
-        } else if(newCount == winnerVoteCount) {
-            if(winnerIndex > proposal) {
+        } else if (newCount == winnerVoteCount) {
+            if (winnerIndex > proposal) {
                 winnerIndex = proposal;
-                
+
                 emit WinnerUpdated(proposal, newCount);
             }
         }
