@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/Ballot.sol";
 
-contract VotingInvariantTest is Test {
+contract BallotInvariantTest is Test {
     Ballot ballot;
     address[] internal actors;
 

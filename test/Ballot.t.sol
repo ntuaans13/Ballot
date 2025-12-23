@@ -5,7 +5,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/Ballot.sol";
 
-contract votingTest is Test {
+contract BallotTest is Test {
     Ballot ballot;
 
     event RightToVote(address indexed voter);
